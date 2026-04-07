@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our Special Day</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div class="hearts-container">
+        <div class="floating-heart">💜</div>
+        <div class="floating-heart">✨</div>
+        <div class="floating-heart">💜</div>
+        <div class="floating-heart">🌸</div>
+        <div class="floating-heart">💜</div>
+    </div>
+
+    <header class="fade-in">
+        <h1>Happy Monthsary!</h1>
+        <div class="big-heart">💜</div>
+    </header>
+
+    <main class="container">
+        <section class="timer-card fade-in">
+            <h3>We've been together for:</h3>
+            <div id="timer">
+                <div class="time-box"><span id="days">0</span><p>Days</p></div>
+                <div class="time-box"><span id="hours">0</span><p>Hours</p></div>
+                <div class="time-box"><span id="minutes">0</span><p>Mins</p></div>
+                <div class="time-box"><span id="seconds">0</span><p>Secs</p></div>
+            </div>
+        </section>
+
+        <section class="gallery fade-in">
+            <h3 class="gallery-title">Our Favorite Moments</h3>
+            <div class="photo-grid">
+                <div class="photo"><img src="assets/img/Messenger_creation_1BFE662B-1B28-43D6-85A4-BE03DFBE1CC2.jpeg" alt="Us"></div>
+                <div class="photo"><img src="assets/img/Messenger_creation_4306353A-131D-4282-8DA7-775A8750CF48.jpeg" alt="Us"></div>
+                <div class="photo"><img src="assets/img/Messenger_creation_D089C8DA-1203-4E70-B0D1-5823665F9E58.jpeg" alt="Us"></div>
+                <div class="photo"><img src="assets/img/Messenger_creation_D8AE6E9A-5D57-4633-8E4B-AA183C768379.jpeg" alt="Us"></div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="fade-in">
+        <p>Created by your hubby, Miguel</p>
+        <p class="her-name">My Hillary Angela L. Negapatan</p>
+    </footer>
+
+    <script>
+        function updateTimer() {
+            const startDate = new Date("February 8, 2024 00:00:00").getTime();
+            const now = new Date().getTime();
+            const difference = now - startDate;
+
+            const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+
+            document.getElementById("days").innerText = days;
+            document.getElementById("hours").innerText = hours;
+            document.getElementById("minutes").innerText = minutes;
+            document.getElementById("seconds").innerText = seconds;
+        }
+        setInterval(updateTimer, 1000);
+        updateTimer();
+    </script>
+</body>
+</html>
