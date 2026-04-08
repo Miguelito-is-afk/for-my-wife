@@ -10,20 +10,23 @@
 <body>
 
     <div class="hearts-container">
-        <div class="floating-heart">💜</div>
-        <div class="floating-heart">✨</div>
-        <div class="floating-heart">🌸</div>
-        <div class="floating-heart">💜</div>
-        <div class="floating-heart">✨</div>
+        <div class="floating-heart" style="left:5%; animation-delay:0s">💜</div>
+        <div class="floating-heart" style="left:15%; animation-delay:2s">🌸</div>
+        <div class="floating-heart" style="left:25%; animation-delay:5s">✨</div>
+        <div class="floating-heart" style="left:40%; animation-delay:1s">🌸</div>
+        <div class="floating-heart" style="left:55%; animation-delay:3s">💜</div>
+        <div class="floating-heart" style="left:70%; animation-delay:6s">✨</div>
+        <div class="floating-heart" style="left:85%; animation-delay:2s">🌸</div>
+        <div class="floating-heart" style="left:92%; animation-delay:4s">💜</div>
     </div>
 
-    <header class="fade-in">
-        <h1>Happy Monthsary!</h1>
+    <header class="hero-header reveal">
+        <h1>Our Beautiful Journey</h1>
         <div class="big-heart">💜</div>
     </header>
 
     <main class="container">
-        <section class="timer-card fade-in">
+        <section class="timer-card reveal">
             <h3>Our Time Together</h3>
             <div id="timer">
                 <div class="time-box"><span id="days">0</span><p>Days</p></div>
@@ -33,44 +36,77 @@
             </div>
         </section>
 
-        <div class="timeline fade-in">
-            
-            <section class="month-section">
+        <div class="timeline">
+            <section class="month-section reveal">
                 <div class="month-header">
                     <span class="dot"></span>
                     <h2>April 2026</h2>
                 </div>
-                <div class="photo-grid">
+                
+                <div class="photo-grid" id="april-grid">
                     <div class="photo"><img src="assets/img/Messenger_creation_1BFE662B-1B28-43D6-85A4-BE03DFBE1CC2.jpeg" alt="April Memory"></div>
                     <div class="photo"><img src="assets/img/Messenger_creation_4306353A-131D-4282-8DA7-775A8750CF48.jpeg" alt="April Memory"></div>
                     <div class="photo"><img src="assets/img/Messenger_creation_D089C8DA-1203-4E70-B0D1-5823665F9E58.jpeg" alt="April Memory"></div>
                     <div class="photo"><img src="assets/img/Messenger_creation_D8AE6E9A-5D57-4633-8E4B-AA183C768379.jpeg" alt="April Memory"></div>
+                    
+                    <div class="photo hidden-pic"><img src="assets/img/Placeholder.jpeg" alt="Extra"></div>
+                    <div class="photo hidden-pic"><img src="assets/img/Placeholder.jpeg" alt="Extra"></div>
                 </div>
-            </section>
 
-            </div>
+                <button class="toggle-btn" onclick="togglePics('april-grid', this)">Show More Pics 🌸</button>
+            </section>
+        </div>
     </main>
 
-    <footer class="fade-in">
-        <p>Created by your hubby, Miguel</p>
-        <p class="her-name">My Hillary Angela L. Negapatan</p>
+    <footer class="reveal">
+        <p>Created with 💜 by your hubby, Miguel</p>
+        <p class="her-name">Hillary Angela L. Negapatan</p>
     </footer>
 
     <script>
+        // 1. SCROLL REVEAL (Making elements fade in as you scroll)
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) entry.target.classList.add('active');
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+        // 2. STAGGERED PHOTO REVEAL
+        function togglePics(gridId, btn) {
+            const grid = document.getElementById(gridId);
+            const hiddenPics = grid.querySelectorAll('.hidden-pic');
+            const isShowing = btn.innerText.includes("Less");
+        
+            // Add a little "click" feedback
+            btn.style.transform = "scale(0.9)";
+            setTimeout(() => { btn.style.transform = ""; }, 100);
+        
+            if (!isShowing) {
+                hiddenPics.forEach((pic, index) => {
+                    setTimeout(() => {
+                        pic.classList.add('show-anim');
+                    }, index * 200); 
+                });
+                btn.innerHTML = "Show Less Pics 💜";
+            } else {
+                hiddenPics.forEach(pic => pic.classList.remove('show-anim'));
+                btn.innerHTML = "Show More Pics 🌸";
+            }
+        }
+
+
+        // 3. TIMER LOGIC
         function updateTimer() {
             const startDate = new Date("February 8, 2024 00:00:00").getTime();
             const now = new Date().getTime();
-            const difference = now - startDate;
+            const diff = now - startDate;
 
-            const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((difference % (1000 * 60)) / 1000);
-
-            document.getElementById("days").innerText = days;
-            document.getElementById("hours").innerText = hours;
-            document.getElementById("minutes").innerText = minutes;
-            document.getElementById("seconds").innerText = seconds;
+            document.getElementById("days").innerText = Math.floor(diff / (1000 * 60 * 60 * 24));
+            document.getElementById("hours").innerText = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            document.getElementById("minutes").innerText = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            document.getElementById("seconds").innerText = Math.floor((diff % (1000 * 60)) / 1000);
         }
         setInterval(updateTimer, 1000);
         updateTimer();
