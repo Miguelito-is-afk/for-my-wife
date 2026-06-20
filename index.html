@@ -9,7 +9,6 @@
 </head>
 <body>
 
-    <!-- Floating Background Hearts -->
     <div class="hearts-container">
         <div class="floating-heart" style="left:5%; animation-delay:0s">💜</div>
         <div class="floating-heart" style="left:15%; animation-delay:2s">🌸</div>
@@ -21,10 +20,8 @@
         <div class="floating-heart" style="left:92%; animation-delay:4s">💜</div>
     </div>
 
-    <!-- Pinned Floating Control Panel Button -->
     <button class="fab-admin-btn" id="open-control-panel-btn" onclick="toggleControlPanel(true)" title="Open Control Panel">🛠️</button>
 
-    <!-- Control Panel Modal Overlay -->
     <div class="modal-overlay" id="control-panel-modal">
         <div class="control-panel-card">
             <button class="close-modal-btn" onclick="toggleControlPanel(false)">&times;</button>
@@ -36,27 +33,23 @@
             
             <div id="admin-upload-zone" style="display: none;">
                 
-                <!-- Tab Switching Panel Header Navigation -->
                 <div class="panel-tabs">
                     <button class="tab-btn active" id="tab-btn-upload" onclick="switchPanelTab('upload')">Upload Memory 📸</button>
                     <button class="tab-btn" id="tab-btn-logs" onclick="switchPanelTab('logs')">System Console 🖥️</button>
                 </div>
 
-                <!-- TAB CONTENT 1: UPLOAD CORE CONFIG PANEL -->
                 <div id="tab-content-upload">
                     <div class="upload-field">
-                        <label for="photo-file" class="custom-file-upload">Choose Photo 📸</label>
-                        <input type="file" id="photo-file" accept="image/*">
+                        <label for="photo-input" class="custom-file-upload">Choose Photos 📸</label>
+                        <input type="file" id="photo-input" accept="image/*" multiple>
                         <span id="file-name-display">No file selected</span>
                     </div>
 
-                    <!-- Interactive Upload Preview Area -->
-                    <div id="preview-container" style="display: none;">
-                        <img id="upload-preview" src="" alt="Upload Preview">
-                        <button type="button" class="remove-preview-btn" onclick="removePreview()" title="Remove Image">&times;</button>
+                    <div id="preview-container" style="display: none; position: relative;">
+                        <div id="preview-images-grid"></div>
+                        <button type="button" class="remove-preview-btn" onclick="removePreview()" title="Remove All Images">&times;</button>
                     </div>
 
-                    <!-- Custom Date Picker Field -->
                     <div class="date-field">
                         <label for="photo-date">When was this memory captured? 📅</label>
                         <input type="date" id="photo-date">
@@ -71,14 +64,12 @@
                     <p id="upload-status"></p>
                 </div>
 
-                <!-- TAB CONTENT 2: DATABASE STATUS & RUNTIME ENGINE LOGS TERMINAL -->
                 <div id="tab-content-logs" style="display: none;">
                     <div class="terminal-status-bar">
                         <span class="status-indicator-label">Database Network:</span>
                         <span id="db-status-badge" class="badge-connecting">CONNECTING...</span>
                     </div>
                     
-                    <!-- Real-Time Text Output Window -->
                     <div class="terminal-console" id="terminal-console"></div>
                     
                     <button class="clear-logs-btn" onclick="clearConsoleLogs()">Clear Terminal Screen</button>
@@ -88,7 +79,6 @@
         </div>
     </div>
 
-    <!-- Photo Details Lightbox Modal -->
     <div class="modal-overlay" id="details-modal" onclick="toggleDetailsModal(false)">
         <div class="details-card" onclick="event.stopPropagation()">
             <button class="close-modal-btn" onclick="toggleDetailsModal(false)">&times;</button>
@@ -105,7 +95,6 @@
     </header>
 
     <main class="container">
-        <!-- Relationship Milestone Counter -->
         <section class="timer-card reveal">
             <h3>Our Time Together</h3>
             <div id="timer">
@@ -116,7 +105,6 @@
             </div>
         </section>
 
-        <!-- Scrapbook Dynamic Timeline Display -->
         <div class="timeline" id="dynamic-timeline"></div>
 
         <div class="center-container reveal">
@@ -239,49 +227,111 @@
         };
 
         // File stream parsing logic
-        const fileInput = document.getElementById("photo-file");
+        const fileInput = document.getElementById("photo-input"); 
         const focusInput = document.getElementById("focus-y");
         const previewContainer = document.getElementById("preview-container");
-        const previewImg = document.getElementById("upload-preview");
+        const previewGrid = document.getElementById("preview-images-grid");
         const fileNameDisplay = document.getElementById("file-name-display");
         const dateInput = document.getElementById("photo-date");
 
+        let selectedFilesQueue = [];
+
+        // Enhanced multi-file asynchronous reader engine
         fileInput.addEventListener("change", (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                fileNameDisplay.innerText = file.name;
-                window.writeSystemLog(`File asset pipeline read target matching: "${file.name}" (${(file.size / 1024).toFixed(1)} KB)`, "info");
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    previewImg.src = event.target.result;
-                    previewContainer.style.display = "block";
-                    previewImg.style.objectPosition = `center ${focusInput.value}%`;
-                    window.writeSystemLog("Local dynamic memory thumbnail source preview loaded successfully.", "success");
-                };
-                reader.readAsDataURL(file);
-            } else {
-                removePreview();
+            const files = e.target.files;
+            
+            if (files && files.length > 0) {
+                // Convert FileList to normal Array and append to our global queue
+                selectedFilesQueue = Array.from(files);
+                renderPreviewGrid();
             }
         });
 
-        focusInput.addEventListener("input", (e) => {
-            if (previewImg.src) {
-                previewImg.style.objectPosition = `center ${e.target.value}%`;
+        // Function dedicated to rendering the grid items with separate delete targets
+        function renderPreviewGrid() {
+            previewGrid.innerHTML = ""; // Wipe workspace caches
+            
+            if (selectedFilesQueue.length === 0) {
+                removePreview();
+                return;
             }
+
+            // Update display file counter text
+            fileNameDisplay.innerText = selectedFilesQueue.length === 1 
+                ? selectedFilesQueue[0].name 
+                : `${selectedFilesQueue.length} items selected`;
+            
+            window.writeSystemLog(`Rendering asset queue view: ${selectedFilesQueue.length} items prepared.`, "info");
+            previewContainer.style.display = "block";
+
+            // Map across item queue arrays to build standalone containers
+            selectedFilesQueue.forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    // Create relative wrapper structure container
+                    const wrapper = document.createElement("div");
+                    wrapper.className = "preview-item-wrapper";
+
+                    // Create image thumbnail element
+                    const img = document.createElement("img");
+                    img.src = event.target.result;
+                    img.className = "upload-preview-thumb";
+                    img.alt = "Selection Stream Preview Asset";
+                    img.style.objectPosition = `center ${focusInput.value}%`;
+                    
+                    // Create standalone distinct close (X) button
+                    const closeBtn = document.createElement("button");
+                    closeBtn.type = "button";
+                    closeBtn.className = "remove-single-preview-btn";
+                    closeBtn.innerHTML = "&times;";
+                    closeBtn.title = "Remove this photo";
+                    closeBtn.onclick = function() {
+                        removeSingleFileFromQueue(index);
+                    };
+
+                    wrapper.appendChild(img);
+                    wrapper.appendChild(closeBtn);
+                    previewGrid.appendChild(wrapper);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Drop a target index from upload tracking array context safely
+        window.removeSingleFileFromQueue = function(indexToRemove) {
+            window.writeSystemLog(`Removing temporary asset file index reference: [${indexToRemove}] Name: "${selectedFilesQueue[indexToRemove].name}"`, "info");
+            selectedFilesQueue.splice(indexToRemove, 1);
+            renderPreviewGrid();
+        };
+
+        // Track focus matrix adjustments across entire preview selection
+        focusInput.addEventListener("input", (e) => {
+            const thumbs = document.querySelectorAll(".upload-preview-thumb");
+            thumbs.forEach(thumb => {
+                thumb.style.objectPosition = `center ${e.target.value}%`;
+            });
         });
 
         window.removePreview = function() {
             fileInput.value = "";
+            selectedFilesQueue = [];
             fileNameDisplay.innerText = "No file selected";
-            previewImg.src = "";
+            previewGrid.innerHTML = "";
             previewContainer.style.display = "none";
             window.writeSystemLog("Cleared temporary media upload asset cache data constraints.", "info");
         };
 
-        // Read processing operations
+        // Read processing operations with integrated custom animation wrappers
         async function loadLiveMemories() {
             const timelineContainer = document.getElementById("dynamic-timeline");
-            timelineContainer.innerHTML = "<p style='text-align: center; color: var(--dark-purple); font-weight:600;'>Reading our scrapbook from the clouds... ✨</p>";
+            
+            // Replaced raw text indicator with integrated CSS pulsing framework
+            timelineContainer.innerHTML = `
+                <div class="shimmer-loading-wrapper">
+                    <span class="heart-spinner">💜</span>
+                    <p style="font-weight:600; margin:0;">Reading our scrapbook from the clouds... ✨</p>
+                </div>
+            `;
             
             window.writeSystemLog("Executing query request sync stream target 'memories' collection...", "sys");
             window.updateDatabaseBadgeStatus("Syncing...", "badge-connecting");
@@ -355,6 +405,11 @@
                     img.src = memory.imageUrl;
                     img.alt = "Scrapbook Memory Card";
                     img.style.objectPosition = `center ${memory.focusY || '50%'}`;
+                    
+                    // Seamless load listener ensures image asset flashes do not occur on screen render
+                    img.onload = () => {
+                        img.classList.add("loaded");
+                    };
                     
                     img.onclick = () => openPhotoDetails(memory.imageUrl, memory.takenDate || memory.createdAt, memory.focusY);
                     photoDiv.appendChild(img);
@@ -449,7 +504,7 @@
                         await updateDoc(doc(db, "memories", docId), {
                             focusY: `${parsedValue}%`
                         });
-                        window.writeSystemLog(`Document layout configurations updated dynamically. Refreshing pipeline.`, "success");
+                        document.writeSystemLog(`Document layout configurations updated dynamically. Refreshing pipeline.`, "success");
                         loadLiveMemories();
                     } catch (error) {
                         window.writeSystemLog(`DOCUMENT RATIO TWEAK MALFUNCTION FAILURE: ${error.message}`, "error");
@@ -480,83 +535,100 @@
             }
         });
 
-        // Data Compression & Post Transmit Actions
+        // Helper promise wrapper to process, compress, and upload a single photo
+        function processAndUploadSingleFile(file, chosenDateStr) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onerror = () => reject(new Error(`Failed to read data stream for: ${file.name}`));
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onerror = () => reject(new Error(`Failed to map image element source for: ${file.name}`));
+                    img.onload = async () => {
+                        try {
+                            const canvas = document.createElement("canvas");
+                            let width = img.width;
+                            let height = img.height;
+
+                            const MAX_DIMENSION = 1200; 
+                            if (width > height) {
+                                if (width > MAX_DIMENSION) {
+                                    height *= MAX_DIMENSION / width;
+                                    width = MAX_DIMENSION;
+                                }
+                            } else {
+                                if (height > MAX_DIMENSION) {
+                                    width *= MAX_DIMENSION / height;
+                                    height = MAX_DIMENSION;
+                                }
+                            }
+
+                            canvas.width = width;
+                            canvas.height = height;
+                            const ctx = canvas.getContext("2d");
+                            ctx.drawImage(img, 0, 0, width, height);
+
+                            const optimizedBase64String = canvas.toDataURL("image/jpeg", 0.75);
+                            
+                            // Send data block direct to Cloud Firestore
+                            await addDoc(collection(db, "memories"), {
+                                imageUrl: optimizedBase64String,
+                                focusY: `${focusInput.value}%`,
+                                takenDate: chosenDateStr,
+                                createdAt: new Date().toISOString()
+                            });
+
+                            window.writeSystemLog(`Successfully processed and saved "${file.name}" to cloud storage instance.`, "success");
+                            resolve();
+                        } catch (error) {
+                            reject(error);
+                        }
+                    };
+                };
+            });
+        }
+
+        // Updated Sequential Upload Action Event Pipeline Handler Block reading from our queue array
         document.getElementById("upload-submit-btn").addEventListener("click", async () => {
             const statusText = document.getElementById("upload-status");
-            const file = fileInput.files[0];
             
-            if (!file) {
+            if (selectedFilesQueue.length === 0) {
                 statusText.style.color = "red";
-                statusText.innerText = "Please select a photo first! 🛑";
-                window.writeSystemLog("Upload execution blocked: Local source file object reference is NULL.", "error");
+                statusText.innerText = "Please select at least one photo first! 🛑";
+                window.writeSystemLog("Upload execution blocked: Local source file object reference stack is empty.", "error");
                 return;
             }
 
             const chosenDateStr = dateInput.value || new Date().toISOString().split('T')[0];
-            window.writeSystemLog(`Beginning transmission pipeline protocol sequence for memory asset capture matching date: ${chosenDateStr}`, "sys");
+            window.writeSystemLog(`Beginning transmission pipeline protocol sequence for [${selectedFilesQueue.length}] memory assets matching capture date: ${chosenDateStr}`, "sys");
 
             statusText.style.color = "var(--dark-purple)";
-            statusText.innerText = "Processing and compressing image data... 🪄";
+            
+            // Loop through our tracking queue array sequentially 
+            for (let i = 0; i < selectedFilesQueue.length; i++) {
+                const currentFile = selectedFilesQueue[i];
+                statusText.innerText = `Processing and compressing image (${i + 1}/${selectedFilesQueue.length})... 🪄`;
+                window.writeSystemLog(`Packing data frame matrix for item [${i + 1}/${selectedFilesQueue.length}]: "${currentFile.name}"`, "info");
+                
+                try {
+                    await processAndUploadSingleFile(currentFile, chosenDateStr);
+                } catch (error) {
+                    console.error("Pipeline failure on asset target index: ", error);
+                    window.writeSystemLog(`ASSET TRANSMIT FAILURE on item "${currentFile.name}": ${error.message}`, "error");
+                }
+            }
 
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = (event) => {
-                const img = new Image();
-                img.src = event.target.result;
-                img.onload = async () => {
-                    const canvas = document.createElement("canvas");
-                    let width = img.width;
-                    let height = img.height;
-
-                    const MAX_DIMENSION = 1200; 
-                    if (width > height) {
-                        if (width > MAX_DIMENSION) {
-                            height *= MAX_DIMENSION / width;
-                            width = MAX_DIMENSION;
-                        }
-                    } else {
-                        if (height > MAX_DIMENSION) {
-                            width *= MAX_DIMENSION / height;
-                            height = MAX_DIMENSION;
-                        }
-                    }
-
-                    canvas.width = width;
-                    canvas.height = height;
-                    const ctx = canvas.getContext("2d");
-                    ctx.drawImage(img, 0, 0, width, height);
-
-                    const optimizedBase64String = canvas.toDataURL("image/jpeg", 0.75);
-                    window.writeSystemLog(`Image compression operations complete. Result array base string dimension size constraints computed.`, "success");
-                    
-                    statusText.innerText = "Publishing directly to Firestore Database... 💾🚀";
-                    window.writeSystemLog("Pushing compressed collection data packet array to Cloud Firestore instance...", "sys");
-
-                    try {
-                        await addDoc(collection(db, "memories"), {
-                            imageUrl: optimizedBase64String,
-                            focusY: `${focusInput.value}%`,
-                            takenDate: chosenDateStr,
-                            createdAt: new Date().toISOString()
-                        });
-
-                        window.writeSystemLog("Cloud Firestore transaction complete: Document successfully added to cloud database instance collection index.", "success");
-                        statusText.style.color = "green";
-                        statusText.innerText = "Published successfully! ✨🎉";
-                        
-                        removePreview();
-                        dateInput.value = new Date().toISOString().split('T')[0];
-                        
-                        loadLiveMemories();
-                        setTimeout(() => { toggleControlPanel(false); statusText.innerText = ""; }, 1500);
-                    } catch (error) {
-                        console.error("Firestore writing malfunction: ", error);
-                        window.writeSystemLog(`FIRESTORE WRITE EXCEPTION ERROR: ${error.message}`, "error");
-                        statusText.style.color = "red";
-                        statusText.innerText = "Upload failed. Check firestore rules configuration.";
-                    }
-                };
-            };
+            // Execute final wrap adjustments on completion
+            window.writeSystemLog("Cloud Firestore transaction stack complete: All selected documents updated successfully.", "success");
+            statusText.style.color = "green";
+            statusText.innerText = `Published ${selectedFilesQueue.length} memories successfully! ✨🎉`;
+            
+            removePreview();
+            dateInput.value = new Date().toISOString().split('T')[0];
+            
+            loadLiveMemories();
+            setTimeout(() => { toggleControlPanel(false); statusText.innerText = ""; }, 1500);
         });
 
         // Viewport intersection animations

@@ -257,6 +257,96 @@ h1 {
     width: 100%;
 }
 
+/* Modern Shimmer Placeholder & Dynamic Spinner Hooks */
+.shimmer-loading-wrapper {
+    text-align: center;
+    padding: 50px 20px;
+    color: #6c5ce7;
+    font-family: 'Poppins', sans-serif;
+}
+.heart-spinner {
+    font-size: 3rem;
+    display: inline-block;
+    animation: pulseHeartBeat 1.3s infinite ease-in-out;
+    margin-bottom: 12px;
+}
+
+/* Control Panel Image Grid Layout */
+#preview-images-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 15px;
+    max-height: 220px;
+    overflow-y: auto;
+    padding: 8px;
+    border: 1px dashed rgba(var(--dark-purple), 0.2);
+    border-radius: 12px;
+}
+
+.preview-item-wrapper {
+    position: relative;
+    width: 80px;
+    height: 80px;
+}
+
+.upload-preview-thumb {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    display: block;
+}
+
+.upload-preview-thumb:hover {
+    transform: scale(1.06);
+}
+
+/* The individual absolute positioned X button */
+.remove-single-preview-btn {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    background: #ff4d4d;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 12px;
+    line-height: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+    transition: transform 0.2s ease;
+    z-index: 10;
+}
+
+.remove-single-preview-btn:hover {
+    transform: scale(1.15);
+    background: #cc0000;
+}
+
+/* Seamless Timeline Fade-In Mechanism */
+.photo img {
+    opacity: 0;
+    transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.photo img.loaded {
+    opacity: 1;
+}
+
+
+/* Core CSS Animation Engines */
+@keyframes pulseHeartBeat {
+    0%, 100% { transform: scale(1); filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)); }
+    50% { transform: scale(1.22); filter: drop-shadow(0 6px 12px rgba(108, 92, 231, 0.3)); }
+}
+
 /* Hidden Extras Handling */
 .hidden-pic {
     display: none;
@@ -371,15 +461,27 @@ h1 {
 }
 
 .control-panel-card {
-    background: white;
-    width: 92%;
-    max-width: 480px;
-    padding: 35px 25px;
-    border-radius: 30px;
-    box-shadow: var(--shadow-md);
     position: relative;
-    transform: translateY(-30px);
-    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    background: #ffffff;
+    padding: 25px;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 440px;
+    box-sizing: border-box;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    
+    /* CRITICAL: Allow card to grow, but scroll if it exceeds screen height */
+    height: auto;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+#tab-content-upload {
+    display: flex;
+    flex-direction: column;
+    gap: 16px; /* Dynamically enforces identical spacing between all active fields */
+    margin-top: 15px;
+    width: 100%;
 }
 
 .modal-overlay.visible .control-panel-card {
@@ -504,38 +606,43 @@ input[type="file"] { display: none; }
 /* --- Thumbnail Preview Area --- */
 #preview-container {
     position: relative;
-    margin: 15px auto;
-    width: 140px;
-    height: 140px;
+    width: 100%;
+    margin-bottom: 4px; /* Tiny buffer space */
 }
 
-#upload-preview {
+/* FIX: Changed from ID to match your dynamic multiple-image grid thumbs */
+.upload-preview-thumb {
     width: 100%;
     height: 100%;
     object-fit: cover;
     border-radius: 20px;
     border: 4px solid white;
     box-shadow: var(--shadow-sm);
+    transition: transform 0.2s ease;
+}
+
+.upload-preview-thumb:hover {
+    transform: scale(1.06);
 }
 
 .remove-preview-btn {
     position: absolute;
     top: -8px;
     right: -8px;
-    background: #ff7675;
+    background: #ff4d4d;
     color: white;
     border: none;
     border-radius: 50%;
     width: 24px;
     height: 24px;
-    font-size: 1rem;
-    font-weight: bold;
+    font-size: 16px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: var(--shadow-sm);
-    transition: transform 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    z-index: 15;
+    transition: transform 0.2s, background 0.2s;
 }
 
 .remove-preview-btn:hover {
@@ -543,22 +650,66 @@ input[type="file"] { display: none; }
     background: #ff4757;
 }
 
-.slider-field { margin: 20px 0; }
+/* --- Form Fields Layout Stack --- */
+.upload-field,
+.date-field,
+.slider-field {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    position: relative; 
+}
+
+/* Unified slider field spacing */
+.slider-field { 
+    margin: 20px 0; 
+}
+
 .slider-field label {
     font-size: 0.85rem;
-    display: block;
-    margin-bottom: 8px;
     font-weight: 600;
 }
 
-.slider-field input[type="range"] {
+/* --- Standardized Form Sizing Components --- */
+.date-field input[type="date"],
+.slider-field input[type="range"],
+.action-btn {
     width: 100%;
+    max-width: 280px; /* Prevents items from stretching awkwardly wide */
+    box-sizing: border-box;
+}
+
+.slider-field input[type="range"] {
     accent-color: var(--dark-purple);
 }
 
-.control-panel-card .action-btn {
-    margin-top: 10px;
-    width: 100%;
+.date-field input[type="date"] {
+    padding: 10px 14px;
+    border: 1px solid rgba(var(--dark-purple), 0.2);
+    border-radius: 20px;
+    outline: none;
+    text-align: center;
+}
+
+/* --- Master Primary Action Button --- */
+.action-btn {
+    padding: 12px;
+    background: linear-gradient(135deg, #a88beb, #7f53ac);
+    color: white;
+    border: none;
+    border-radius: 25px;
+    font-weight: bold;
+    cursor: pointer;
+    align-self: center; 
+    margin-top: 15px;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(127, 83, 172, 0.4);
 }
 
 #upload-status {
