@@ -25,7 +25,7 @@ body {
     line-height: 1.6;
 }
 
-/* --- Floating Background (Z-INDEX FIX) --- */
+/* --- Floating Background --- */
 .hearts-container {
     position: fixed;
     top: 0;
@@ -53,7 +53,7 @@ body {
     100% { transform: translateY(-120vh) rotate(360deg); opacity: 0; }
 }
 
-/* --- Layout & Content Positioning --- */
+/* --- Layout Content --- */
 .hero-header, .container, footer {
     position: relative;
     z-index: 10; 
@@ -134,7 +134,7 @@ h1 {
     font-weight: 600;
 }
 
-/* --- Timeline --- */
+/* --- Timeline Gallery --- */
 .timeline {
     position: relative;
     margin-top: 60px;
@@ -143,7 +143,7 @@ h1 {
 }
 
 .month-section {
-    margin-bottom: 80px;
+    margin-bottom: 50px;
     text-align: left;
 }
 
@@ -151,7 +151,7 @@ h1 {
     display: flex;
     align-items: center;
     margin-left: -33px;
-    margin-bottom: 30px;
+    margin-bottom: 25px;
 }
 
 .dot {
@@ -165,19 +165,23 @@ h1 {
 
 .month-header h2 {
     font-family: 'Dancing Script', cursive;
-    font-size: 3rem;
+    font-size: 2.8rem;
     color: var(--dark-purple);
     margin-left: 15px;
+    margin-top: 0;
+    margin-bottom: 0;
 }
 
-/* --- Photos --- */
 .photo-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
+    gap: 25px;
 }
 
-.photo { transition: all 0.5s ease; }
+.photo { 
+    position: relative;
+    transition: all 0.5s ease; 
+}
 
 .photo img {
     width: 100%;
@@ -187,15 +191,73 @@ h1 {
     border: 12px solid white;
     box-shadow: var(--shadow-sm);
     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    display: block;
+    box-sizing: border-box;
+    cursor: pointer;
 }
 
-.photo img:hover {
-    transform: scale(1.05) rotate(-2deg);
+.photo:hover img {
+    transform: scale(1.04) rotate(-1.5deg);
     box-shadow: var(--shadow-md);
     border-color: var(--primary-purple);
 }
 
-/* Hidden Extras */
+/* --- Card Action Overlays --- */
+.photo-actions-overlay {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    opacity: 0;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    transform: translateX(10px);
+    z-index: 15;
+}
+
+.photo:hover .photo-actions-overlay {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.action-icon-btn {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid var(--primary-purple);
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s ease;
+}
+
+.action-icon-btn:hover {
+    transform: scale(1.15);
+    background: white;
+}
+
+.action-icon-btn.delete-style:hover {
+    background: #ffebee;
+    border-color: #ff7675;
+}
+
+.action-icon-btn.edit-style:hover {
+    background: #e8f4fd;
+    border-color: #74b9ff;
+}
+
+.center-container {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+/* Hidden Extras Handling */
 .hidden-pic {
     display: none;
     opacity: 0;
@@ -211,7 +273,7 @@ h1 {
     to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
-/* Scroll Reveal States */
+/* Scroll Animations */
 .reveal {
     opacity: 0;
     transform: translateY(30px);
@@ -223,8 +285,8 @@ h1 {
     transform: translateY(0);
 }
 
-/* --- Buttons & Footer --- */
-.toggle-btn {
+/* --- Interactive Buttons --- */
+.toggle-btn, .action-btn {
     background: white;
     color: var(--dark-purple);
     border: 2px solid var(--primary-purple);
@@ -236,36 +298,389 @@ h1 {
     margin-top: 30px;
     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     box-shadow: var(--shadow-sm);
-    
-    /* This makes the button pulse gently all the time */
     animation: btnPulse 2s infinite;
 }
 
-.toggle-btn:hover {
+.toggle-btn:hover, .action-btn:hover {
     background: var(--dark-purple);
     color: white;
     transform: translateY(-5px) scale(1.05);
     box-shadow: var(--shadow-md);
     border-color: var(--dark-purple);
-    
-    /* Stops the pulse and starts a wiggle on hover */
     animation: wiggle 0.5s ease-in-out infinite;
 }
 
-/* Keyframes for the gentle pulse */
 @keyframes btnPulse {
     0% { box-shadow: 0 0 0 0 rgba(162, 155, 254, 0.4); }
     70% { box-shadow: 0 0 0 15px rgba(162, 155, 254, 0); }
     100% { box-shadow: 0 0 0 0 rgba(162, 155, 254, 0); }
 }
 
-/* Keyframes for the fun wiggle on hover */
 @keyframes wiggle {
     0%, 100% { transform: translateY(-5px) scale(1.05) rotate(0deg); }
     25% { transform: translateY(-5px) scale(1.05) rotate(-2deg); }
     75% { transform: translateY(-5px) scale(1.05) rotate(2deg); }
 }
 
+/* --- Floating Action Admin Button --- */
+.fab-admin-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: var(--solid-white);
+    border: 2px solid var(--primary-purple);
+    font-size: 1.5rem;
+    cursor: pointer;
+    z-index: 100;
+    box-shadow: var(--shadow-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.fab-admin-btn:hover {
+    transform: scale(1.1) rotate(45deg);
+    background: var(--bg-lavender);
+}
+
+/* --- Modal Base Framework Overlays --- */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(40, 42, 55, 0.6);
+    backdrop-filter: blur(5px);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+}
+
+.modal-overlay.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.control-panel-card {
+    background: white;
+    width: 92%;
+    max-width: 480px;
+    padding: 35px 25px;
+    border-radius: 30px;
+    box-shadow: var(--shadow-md);
+    position: relative;
+    transform: translateY(-30px);
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.modal-overlay.visible .control-panel-card {
+    transform: translateY(0);
+}
+
+.control-panel-card h3 {
+    margin-top: 0;
+    color: var(--dark-purple);
+    font-size: 1.8rem;
+    margin-bottom: 20px;
+}
+
+.close-modal-btn {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    background: none;
+    border: none;
+    font-size: 2rem;
+    color: #aaa;
+    cursor: pointer;
+    transition: color 0.2s;
+    z-index: 210;
+}
+
+.close-modal-btn:hover { color: var(--dark-purple); }
+
+/* --- Panel Internal Navigation Tabs --- */
+.panel-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 25px;
+    background: var(--bg-lavender);
+    padding: 5px;
+    border-radius: 15px;
+}
+
+.tab-btn {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 8px 12px;
+    font-family: inherit;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--text-main);
+    cursor: pointer;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+}
+
+.tab-btn.active {
+    background: white;
+    color: var(--dark-purple);
+    box-shadow: var(--shadow-sm);
+}
+
+/* --- Forms & Date Inputs --- */
+#admin-password {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px 20px;
+    border-radius: 25px;
+    border: 1px solid var(--primary-purple);
+    text-align: center;
+    font-family: inherit;
+    font-size: 1rem;
+    outline: none;
+}
+
+.upload-field, .date-field {
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.date-field label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.date-field input[type="date"] {
+    font-family: inherit;
+    padding: 8px 15px;
+    border-radius: 20px;
+    border: 1px solid var(--primary-purple);
+    outline: none;
+    color: var(--text-main);
+    background: white;
+}
+
+input[type="file"] { display: none; }
+
+.custom-file-upload {
+    display: inline-block;
+    padding: 10px 20px;
+    background: var(--bg-lavender);
+    color: var(--dark-purple);
+    border: 1px dashed var(--dark-purple);
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: background 0.2s;
+}
+
+.custom-file-upload:hover { background: #e2d9ff; }
+
+#file-name-display {
+    font-size: 0.8rem;
+    color: #777;
+    max-width: 250px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* --- Thumbnail Preview Area --- */
+#preview-container {
+    position: relative;
+    margin: 15px auto;
+    width: 140px;
+    height: 140px;
+}
+
+#upload-preview {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 20px;
+    border: 4px solid white;
+    box-shadow: var(--shadow-sm);
+}
+
+.remove-preview-btn {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #ff7675;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.2s ease;
+}
+
+.remove-preview-btn:hover {
+    transform: scale(1.15);
+    background: #ff4757;
+}
+
+.slider-field { margin: 20px 0; }
+.slider-field label {
+    font-size: 0.85rem;
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.slider-field input[type="range"] {
+    width: 100%;
+    accent-color: var(--dark-purple);
+}
+
+.control-panel-card .action-btn {
+    margin-top: 10px;
+    width: 100%;
+}
+
+#upload-status {
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-top: 15px;
+    min-height: 20px;
+}
+
+/* --- Interactive Developer Console Shell (Terminal Terminal) --- */
+.terminal-status-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    padding: 0 5px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.status-indicator-label { color: var(--text-main); }
+
+#db-status-badge {
+    padding: 3px 10px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    color: white;
+    letter-spacing: 0.5px;
+}
+
+.badge-online { background: #00b894; }
+.badge-connecting { background: #fdc12e; color: #4a4e69 !important; }
+.badge-offline { background: #ff7675; }
+
+.terminal-console {
+    background: #1e1e24;
+    border-radius: 18px;
+    height: 220px;
+    padding: 15px;
+    overflow-y: auto;
+    text-align: left;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.75rem;
+    box-sizing: border-box;
+    box-shadow: inset 0 4px 12px rgba(0,0,0,0.2);
+    border: 1px solid rgba(108, 92, 231, 0.15);
+}
+
+/* Terminal Log Entry Types */
+.log-entry {
+    margin-bottom: 6px;
+    line-height: 1.4;
+    word-break: break-all;
+}
+
+.log-time { color: #888; margin-right: 6px; }
+.log-info { color: #dcdde1; }
+.log-sys { color: #fdcb6e; }
+.log-success { color: #55efc4; }
+.log-error { color: #ff7675; font-weight: bold; }
+
+.clear-logs-btn {
+    background: none;
+    border: none;
+    color: var(--dark-purple);
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 12px;
+    text-decoration: underline;
+    transition: color 0.2s;
+}
+.clear-logs-btn:hover { color: var(--primary-purple); }
+
+/* Custom Terminal Scrollbar */
+.terminal-console::-webkit-scrollbar { width: 6px; }
+.terminal-console::-webkit-scrollbar-track { background: transparent; }
+.terminal-console::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 10px; }
+.terminal-console::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
+
+/* --- Photo Details Cinematic Lightbox --- */
+.details-card {
+    background: white;
+    padding: 15px;
+    border-radius: 35px;
+    box-shadow: var(--shadow-md);
+    width: 90%;
+    max-width: 650px;
+    position: relative;
+    transform: scale(0.9);
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.2);
+}
+
+.modal-overlay.visible .details-card {
+    transform: scale(1);
+}
+
+.details-img-wrapper {
+    width: 100%;
+    max-height: 70vh;
+    overflow: hidden;
+    border-radius: 25px;
+}
+
+#details-img {
+    width: 100%;
+    height: auto;
+    max-height: 70vh;
+    object-fit: contain;
+    display: block;
+}
+
+#details-date-string {
+    font-family: 'Dancing Script', cursive;
+    font-size: 2rem;
+    color: var(--dark-purple);
+    margin: 15px 0 5px 0;
+    font-weight: bold;
+}
+
+/* --- Footer Area --- */
 footer {
     padding: 80px 20px;
     background: white;
@@ -280,9 +695,12 @@ footer {
     margin-top: 10px;
 }
 
-/* Mobile Responsiveness */
+/* --- Mobile Breakpoints --- */
 @media (max-width: 600px) {
     .photo-grid { grid-template-columns: 1fr; }
     .hero-header { padding: 60px 20px; }
     .timer-card { margin-top: -40px; }
+    .fab-admin-btn { top: 15px; right: 15px; width: 45px; height: 45px; }
+    .photo-actions-overlay { opacity: 1; transform: translateX(0); top: 15px; right: 15px; }
+    .month-header h2 { font-size: 2.2rem; }
 }
