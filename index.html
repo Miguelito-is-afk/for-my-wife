@@ -119,7 +119,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, query, orderBy, doc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, query, orderBy, doc, deleteDoc, updateDoc, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBu7KYw-7X2k_JzDDwvAXZB48vWe0XPRaU",
@@ -242,7 +242,7 @@
             
             if (files && files.length > 0) {
                 // Convert FileList to normal Array and append to our global queue
-                selectedFilesQueue = Array.from(files);
+                selectedFilesQueue = [...selectedFilesQueue, ...Array.from(files)];
                 renderPreviewGrid();
             }
         });
@@ -337,7 +337,12 @@
             window.updateDatabaseBadgeStatus("Syncing...", "badge-connecting");
 
             try {
-                const q = query(collection(db, "memories"), orderBy("takenDate", "desc"));
+                // Dynamic query: Limits database pull to 6 items unless "Show More" is checked!
+                const memoryQueryRef = collection(db, "memories");
+                const q = showAllPhotos 
+                    ? query(memoryQueryRef, orderBy("takenDate", "desc"))
+                    : query(memoryQueryRef, orderBy("takenDate", "desc"), limit(6)); 
+
                 const querySnapshot = await getDocs(q);
                 
                 localMemoriesArray = [];
@@ -345,14 +350,13 @@
                     localMemoriesArray.push({ id: doc.id, ...doc.data() });
                 });
 
-                window.writeSystemLog(`Firestore collection fetch completed. Found [${localMemoriesArray.length}] indices documents.`, "success");
+                window.writeSystemLog(`Firestore fetch complete. Cached [${localMemoriesArray.length}] items.`, "success");
                 window.updateDatabaseBadgeStatus("ONLINE", "badge-online");
                 renderTimelineGrid();
             } catch (error) {
                 console.error("Database read failure: ", error);
                 window.writeSystemLog(`CRITICAL PIPELINE ERROR: ${error.message}`, "error");
                 window.updateDatabaseBadgeStatus("ERROR", "badge-offline");
-                timelineContainer.innerHTML = "<p style='color: red; text-align:center;'>Failed to load memories. Check Firebase permissions.</p>";
             }
         }
 
@@ -504,7 +508,8 @@
                         await updateDoc(doc(db, "memories", docId), {
                             focusY: `${parsedValue}%`
                         });
-                        document.writeSystemLog(`Document layout configurations updated dynamically. Refreshing pipeline.`, "success");
+                        // Fixed typo path targeting window object mapping sequence
+                        window.writeSystemLog(`Document layout configurations updated dynamically. Refreshing pipeline.`, "success");
                         loadLiveMemories();
                     } catch (error) {
                         window.writeSystemLog(`DOCUMENT RATIO TWEAK MALFUNCTION FAILURE: ${error.message}`, "error");
@@ -518,8 +523,8 @@
 
         window.togglePics = function() {
             showAllPhotos = !showAllPhotos;
-            renderTimelineGrid();
-            document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+            loadLiveMemories(); 
+            window.writeSystemLog(`Timeline visibility parameters toggled. Show All State: ${showAllPhotos}`, "info");
         };
 
         const passwordInput = document.getElementById("admin-password");
@@ -551,7 +556,7 @@
                             let width = img.width;
                             let height = img.height;
 
-                            const MAX_DIMENSION = 1200; 
+                            const MAX_DIMENSION = 600; 
                             if (width > height) {
                                 if (width > MAX_DIMENSION) {
                                     height *= MAX_DIMENSION / width;
@@ -569,7 +574,7 @@
                             const ctx = canvas.getContext("2d");
                             ctx.drawImage(img, 0, 0, width, height);
 
-                            const optimizedBase64String = canvas.toDataURL("image/jpeg", 0.75);
+                            const optimizedBase64String = canvas.toDataURL("image/jpeg", 0.50);
                             
                             // Send data block direct to Cloud Firestore
                             await addDoc(collection(db, "memories"), {
