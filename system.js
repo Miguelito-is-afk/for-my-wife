@@ -117,9 +117,27 @@ let selectedFilesQueue = [];
 
 if (fileInput) {
     fileInput.addEventListener("change", (e) => {
-        const files = e.target.files;
-        if (files && files.length > 0) {
-            selectedFilesQueue = [...selectedFilesQueue, ...Array.from(files)];
+        const files = Array.from(e.target.files);
+        if (files.length > 0) {
+            const currentCount = selectedFilesQueue.length;
+            const availableSlots = 5 - currentCount;
+
+            if (availableSlots <= 0) {
+                alert("You can only upload a maximum of 5 photos at a time to prevent server overload! 🛑");
+                window.writeSystemLog("Upload queue limit reached. Blocked additional file additions.", "error");
+                // Clear the input so they can try again if they hit the limit via file dialog
+                fileInput.value = ""; 
+                return;
+            }
+
+            const filesToAdd = files.slice(0, availableSlots);
+            
+            if (files.length > availableSlots) {
+                alert(`Only ${availableSlots} more photo(s) can be added right now. The limit is 5 per batch!`);
+                window.writeSystemLog(`Queue capped. Trimmed ${files.length - availableSlots} items from selection.`, "info");
+            }
+
+            selectedFilesQueue = [...selectedFilesQueue, ...filesToAdd];
             renderPreviewGrid();
         }
     });
@@ -252,9 +270,14 @@ function renderTimelineGrid() {
         groupedMap[groupKey].push(memory);
     });
 
+    let sectionIndex = 0;
+
     for (const [monthYearName, photosArray] of Object.entries(groupedMap)) {
         const section = document.createElement("section");
         section.className = "month-section month-collapsed"; 
+
+        section.style.animationDelay = `${sectionIndex * 0.12}s`; 
+        sectionIndex++;
 
         const headerDiv = document.createElement("div");
         headerDiv.className = "month-header";
@@ -287,7 +310,10 @@ function renderTimelineGrid() {
             }
 
             const img = document.createElement("img");
-            img.onload = () => { img.classList.add("loaded"); };
+            img.onload = () => { 
+                img.classList.add("loaded"); 
+                photoDiv.classList.add("popped"); 
+            };
             img.onerror = () => {
                 window.writeSystemLog(`Render warning: Asset index [${index}] failed to decode or string is corrupt.`, "error");
             };
@@ -295,6 +321,7 @@ function renderTimelineGrid() {
             
             if (img.complete) {
                 img.classList.add("loaded");
+                photoDiv.classList.add("popped"); 
             }
             
             img.alt = "Scrapbook Memory Card";
@@ -345,7 +372,13 @@ function renderTimelineGrid() {
             gridDiv.appendChild(photoDiv);
         });
 
-        section.appendChild(gridDiv);
+        // --- NEW WRAPPER FOR SMOOTH ACCORDION ANIMATION ---
+        const contentWrapper = document.createElement("div");
+        contentWrapper.className = "month-content-wrapper";
+        const contentInner = document.createElement("div");
+        contentInner.className = "month-content-inner";
+        
+        contentInner.appendChild(gridDiv);
 
         if (photosArray.length > 4) {
             const toggleContainer = document.createElement("div");
@@ -365,6 +398,7 @@ function renderTimelineGrid() {
                 for (let i = 0; i < Math.min(BATCH_SIZE, hiddenPhotos.length); i++) {
                     hiddenPhotos[i].classList.remove("hidden-pic");
                     hiddenPhotos[i].classList.add("show-anim");
+                    hiddenPhotos[i].classList.add("popped"); // Triggers the bouncy effect
                 }
                 
                 const newHiddenCount = gridDiv.querySelectorAll(".photo.hidden-pic").length;
@@ -379,9 +413,11 @@ function renderTimelineGrid() {
             };
             
             toggleContainer.appendChild(monthToggleBtn);
-            section.appendChild(toggleContainer);
+            contentInner.appendChild(toggleContainer);
         }
 
+        contentWrapper.appendChild(contentInner);
+        section.appendChild(contentWrapper);
         timelineContainer.appendChild(section);
     }
 }
@@ -483,7 +519,7 @@ function processAndUploadSingleFile(file, chosenDateStr) {
                     const ctx = canvas.getContext("2d");
                     ctx.drawImage(img, 0, 0, width, height);
 
-                    const optimizedBase64String = canvas.toDataURL("image/jpeg", 0.75);
+                    const optimizedBase64String = canvas.toDataURL("image/jpeg", 0.80);
                     
                     await addDoc(collection(db, "memories"), {
                         imageUrl: optimizedBase64String,
@@ -506,6 +542,8 @@ const submitBtn = document.getElementById("upload-submit-btn");
 if (submitBtn) {
     submitBtn.addEventListener("click", async () => {
         const statusText = document.getElementById("upload-status");
+        const progressContainer = document.getElementById("upload-progress-container");
+        const progressBar = document.getElementById("upload-progress-bar");
         
         if (selectedFilesQueue.length === 0) {
             statusText.style.color = "red";
@@ -514,11 +552,21 @@ if (submitBtn) {
             return;
         }
 
+        // 1. Lock the UI
+        submitBtn.disabled = true;
+        submitBtn.innerText = "Publishing... ⏳";
+        if (progressContainer) {
+            progressContainer.style.display = "block";
+            progressBar.style.width = "0%";
+        }
+
         const chosenDateStr = dateInput.value || new Date().toISOString().split('T')[0];
         window.writeSystemLog(`Beginning transmission pipeline protocol sequence for [${selectedFilesQueue.length}] memory assets matching capture date: ${chosenDateStr}`, "sys");
 
         statusText.style.color = "var(--dark-purple)";
+        let successCount = 0;
         
+        // 2. Process Files
         for (let i = 0; i < selectedFilesQueue.length; i++) {
             const currentFile = selectedFilesQueue[i];
             statusText.innerText = `Processing and compressing image (${i + 1}/${selectedFilesQueue.length})... 🪄`;
@@ -526,26 +574,45 @@ if (submitBtn) {
             
             try {
                 await processAndUploadSingleFile(currentFile, chosenDateStr);
+                successCount++;
+                
+                // Update Progress Bar
+                if (progressBar) {
+                    const percent = ((i + 1) / selectedFilesQueue.length) * 100;
+                    progressBar.style.width = `${percent}%`;
+                }
             } catch (error) {
                 console.error("Pipeline failure on asset target index: ", error);
                 window.writeSystemLog(`ASSET TRANSMIT FAILURE on item "${currentFile.name}": ${error.message}`, "error");
             }
         }
 
-        window.writeSystemLog("Cloud Firestore transaction stack complete: All selected documents updated successfully.", "success");
+        // 3. Completion & Cleanup
+        window.writeSystemLog("Cloud Firestore transaction stack complete: Selected documents processed.", "success");
         statusText.style.color = "green";
-        statusText.innerText = `Published ${selectedFilesQueue.length} memories successfully! ✨🎉`;
+        statusText.innerText = `Published ${successCount} memories successfully! ✨🎉`;
         
         removePreview();
         if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
         
         loadLiveMemories();
-        setTimeout(() => { toggleControlPanel(false); statusText.innerText = ""; }, 1500);
+        
+        // 4. Reset UI after a short delay so they can see 100% completion
+        setTimeout(() => { 
+            toggleControlPanel(false); 
+            statusText.innerText = ""; 
+            
+            submitBtn.disabled = false;
+            submitBtn.innerText = "Publish Memory Live ✨";
+            
+            if (progressContainer) progressContainer.style.display = "none";
+            if (progressBar) progressBar.style.width = "0%";
+        }, 2000);
     });
 }
 
 function updateTimer() {
-    const startDate = new Date("February 8, 2024 00:00:00").getTime();
+    const startDate = new Date("November 27, 2024 00:00:00").getTime();
     const now = new Date().getTime();
     const diff = now - startDate;
 
@@ -554,10 +621,19 @@ function updateTimer() {
     const mEl = document.getElementById("minutes");
     const sEl = document.getElementById("seconds");
 
-    if (dEl) dEl.innerText = Math.floor(diff / (1000 * 60 * 60 * 24));
-    if (hEl) hEl.innerText = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    if (mEl) mEl.innerText = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    if (sEl) sEl.innerText = Math.floor((diff % (1000 * 60)) / 1000);
+    // Helper function to update the text and trigger the CSS "tick" animation
+    function updateTimeEl(el, value) {
+        if (el && el.innerText != value) {
+            el.innerText = value;
+            el.classList.add("tick");
+            setTimeout(() => el.classList.remove("tick"), 150);
+        }
+    }
+
+    updateTimeEl(dEl, Math.floor(diff / (1000 * 60 * 60 * 24)));
+    updateTimeEl(hEl, Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)));
+    updateTimeEl(mEl, Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)));
+    updateTimeEl(sEl, Math.floor((diff % (1000 * 60)) / 1000));
 }
 
 window.addEventListener('online', () => {

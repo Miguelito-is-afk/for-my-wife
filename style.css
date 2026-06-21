@@ -75,14 +75,15 @@ h1 {
 }
 
 .big-heart {
-    font-size: 3.5rem;
+    font-size: 3rem;
+    margin-top: 10px;
     display: inline-block;
-    animation: pulse 2s infinite ease-in-out;
+    animation: heartPulse 2.5s infinite ease-in-out;
 }
 
-@keyframes pulse {
+@keyframes heartPulse {
     0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.1) rotate(3deg); }
+    50% { transform: scale(1.15) rotate(5deg); text-shadow: 0 0 20px rgba(162, 155, 254, 0.6); }
 }
 
 .container {
@@ -124,7 +125,13 @@ h1 {
     font-size: clamp(1.2rem, 4vw, 2rem);
     font-weight: 600;
     color: var(--dark-purple);
-    display: block;
+    display: inline-block;
+    transition: transform 0.15s ease, color 0.15s ease;
+}
+
+.time-box span.tick {
+    transform: scale(1.25);
+    color: var(--primary-purple);
 }
 
 .time-box p {
@@ -145,6 +152,12 @@ h1 {
 .month-section {
     margin-bottom: 50px;
     text-align: left;
+    animation: slideUpFade 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards;
+}
+
+@keyframes slideUpFade {
+    from { opacity: 0; transform: translateY(50px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .month-header {
@@ -178,10 +191,33 @@ h1 {
     gap: 25px;
 }
 
-/* --- Accordion Dropdown Core Mechanics --- */
-.month-section.month-collapsed .photo-grid,
-.month-section.month-collapsed .month-toggle-container {
-    display: none !important;
+/* --- Accordion Dropdown Core Mechanics (Animated) --- */
+.month-content-wrapper {
+    display: grid;
+    grid-template-rows: 1fr;
+    transition: grid-template-rows 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.month-section.month-collapsed .month-content-wrapper {
+    grid-template-rows: 0fr;
+}
+
+.month-content-inner {
+    min-height: 0; /* CRITICAL FIX: Allows grid to collapse fully */
+    overflow: hidden;
+    padding: 5px 5px 20px 5px; 
+    margin: -5px -5px 0 -5px; 
+    transition: padding 0.5s ease, margin 0.5s ease, opacity 0.5s ease;
+    opacity: 1;
+}
+
+/* Completely hide padding and fade out when closed so nothing peeks out */
+.month-section.month-collapsed .month-content-inner {
+    padding-top: 0;
+    padding-bottom: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    opacity: 0; 
 }
 
 /* Base state for standard hidden batch photos */
@@ -213,7 +249,15 @@ h1 {
 
 .photo { 
     position: relative;
-    transition: all 0.5s ease; 
+    opacity: 0;
+    transform: scale(0.8) translateY(30px);
+    transition: opacity 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), 
+                transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+}
+
+.photo.popped {
+    opacity: 1;
+    transform: scale(1) translateY(0);
 }
 
 /* --- Photo Frame Assets --- */
@@ -372,7 +416,7 @@ h1 {
 /* Seamless Timeline Fade-In Mechanism */
 .photo img {
     opacity: 0;
-    transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: opacity 0.4s ease-in-out;
 }
 .photo img.loaded {
     opacity: 1;
@@ -750,6 +794,35 @@ input[type="file"] { display: none; }
     font-weight: 600;
     margin-top: 15px;
     min-height: 20px;
+}
+
+/* --- Upload Progress Bar & Disabled States --- */
+#upload-progress-container {
+    width: 100%;
+    max-width: 280px;
+    height: 10px;
+    background: rgba(108, 92, 231, 0.2);
+    border-radius: 10px;
+    margin: 15px auto 0 auto;
+    overflow: hidden;
+    position: relative;
+}
+
+#upload-progress-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(135deg, #a88beb, #7f53ac);
+    border-radius: 10px;
+    transition: width 0.3s ease;
+}
+
+.action-btn:disabled {
+    background: #dcdde1;
+    color: #7f8fa6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+    animation: none;
 }
 
 /* --- Interactive Developer Console Shell (Terminal Terminal) --- */
