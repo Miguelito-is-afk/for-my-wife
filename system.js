@@ -87,6 +87,53 @@ window.toggleDetailsModal = function(show) {
     }
 };
 
+window.customDialog = function(options) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById("custom-dialog-modal");
+        const title = document.getElementById("dialog-title");
+        const message = document.getElementById("dialog-message");
+        const inputCont = document.getElementById("dialog-input-container");
+        const input = document.getElementById("dialog-input");
+        const cancelBtn = document.getElementById("dialog-cancel-btn");
+        const confirmBtn = document.getElementById("dialog-confirm-btn");
+        const icon = document.getElementById("dialog-icon");
+
+        title.innerText = options.title || "Notice";
+        message.innerText = options.message;
+        icon.innerText = options.icon || "💜";
+
+        if (options.type === "prompt") {
+            inputCont.style.display = "block";
+            input.value = options.default || "";
+            input.focus();
+        } else {
+            inputCont.style.display = "none";
+        }
+
+        cancelBtn.style.display = (options.type === "confirm" || options.type === "prompt") ? "inline-block" : "none";
+
+        modal.classList.add("visible");
+
+        const close = (value) => {
+            modal.classList.remove("visible");
+            confirmBtn.onclick = null;
+            cancelBtn.onclick = null;
+            resolve(value);
+        };
+
+        confirmBtn.onclick = () => {
+            if (options.type === "prompt") close(input.value);
+            else close(true);
+        };
+
+        cancelBtn.onclick = () => close(false);
+    });
+};
+
+window.customAlert = (message, icon="🛑") => window.customDialog({type: 'alert', message, title: 'Notice', icon});
+window.customConfirm = (message) => window.customDialog({type: 'confirm', message, title: 'Are you sure?', icon: '🥺'});
+window.customPrompt = (message, defaultVal) => window.customDialog({type: 'prompt', message, title: 'Action Required', default: defaultVal, icon: '📐'});
+
 let activeModalMemories = [];
 let activeModalIndex = 0;
 let touchStartX = 0;
@@ -176,14 +223,14 @@ const dateInput = document.getElementById("photo-date");
 let selectedFilesQueue = [];
 
 if (fileInput) {
-    fileInput.addEventListener("change", (e) => {
+    fileInput.addEventListener("change", async (e) => {
         const files = Array.from(e.target.files);
         if (files.length > 0) {
             const currentCount = selectedFilesQueue.length;
             const availableSlots = 5 - currentCount;
 
             if (availableSlots <= 0) {
-                alert("You can only upload a maximum of 5 photos at a time to prevent server overload! 🛑");
+                await window.customAlert("You can only upload a maximum of 5 photos at a time to prevent server overload!");
                 window.writeSystemLog("Upload queue limit reached. Blocked additional file additions.", "error");
                 // Clear the input so they can try again if they hit the limit via file dialog
                 fileInput.value = ""; 
@@ -193,7 +240,7 @@ if (fileInput) {
             const filesToAdd = files.slice(0, availableSlots);
             
             if (files.length > availableSlots) {
-                alert(`Only ${availableSlots} more photo(s) can be added right now. The limit is 5 per batch!`);
+                await window.customAlert("Only " + availableSlots + " more photo(s) can be added right now. The limit is 5 per batch!", "⚠️");
                 window.writeSystemLog(`Queue capped. Trimmed ${files.length - availableSlots} items from selection.`, "info");
             }
 
@@ -511,7 +558,7 @@ window.downloadPhoto = function(base64Data, filename) {
 };
 
 window.deletePhoto = async function(docId) {
-    if (confirm("Are you sure you want to delete this beautiful memory from the cloud? 🥺")) {
+    if (await window.customConfirm("Are you sure you want to delete this beautiful memory from the cloud?")) {
         window.writeSystemLog(`Sending transaction block delete signal target: Doc ID "${docId}"`, "sys");
         try {
             await deleteDoc(doc(db, "memories", docId));
@@ -519,14 +566,14 @@ window.deletePhoto = async function(docId) {
             loadLiveMemories();
         } catch (error) {
             window.writeSystemLog(`DELETION FAIL MALFUNCTION: ${error.message}`, "error");
-            alert("Failed to delete memory module item.");
+            await window.customAlert("Failed to delete memory module item.", "❌");
         }
     }
 };
 
 window.editPhotoFocus = async function(docId, currentFocusY) {
     const currentNumericValue = parseInt(currentFocusY) || 50;
-    const targetPositionInput = prompt("Enter new alignment height ratio (0 = Top, 50 = Center, 100 = Bottom):", currentNumericValue);
+    const targetPositionInput = await window.customPrompt("Enter new alignment height ratio (0 = Top, 50 = Center, 100 = Bottom):", currentNumericValue);
     
     if (targetPositionInput !== null) {
         const parsedValue = parseInt(targetPositionInput);
@@ -540,10 +587,10 @@ window.editPhotoFocus = async function(docId, currentFocusY) {
                 loadLiveMemories();
             } catch (error) {
                 window.writeSystemLog(`DOCUMENT RATIO TWEAK MALFUNCTION FAILURE: ${error.message}`, "error");
-                alert("Failed to save adjustments.");
+                await window.customAlert("Failed to save adjustments.", "❌");
             }
         } else {
-            alert("Please insert a valid scale parameter constraint between 0 and 100.");
+            await window.customAlert("Please insert a valid scale parameter constraint between 0 and 100.", "⚠️");
         }
     }
 };
