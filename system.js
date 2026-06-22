@@ -11,14 +11,12 @@ const firebaseConfig = {
     measurementId: "G-68EYEVHS7Z"
 };
 
-// Initialize Engine & Core Systems Setup Tracking Logs
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 let localMemoriesArray = [];
 let isAdmin = false; 
 
-// System Log Engine Terminal Pipeline Writer
 window.writeSystemLog = function(message, type = 'info') {
     const consoleBox = document.getElementById("terminal-console");
     if (!consoleBox) return;
@@ -49,7 +47,6 @@ window.updateDatabaseBadgeStatus = function(stateText, className) {
     }
 };
 
-// UI Tab View Context Switcher Mechanics
 window.switchPanelTab = function(targetTab) {
     const uploadBtn = document.getElementById("tab-btn-upload");
     const logsBtn = document.getElementById("tab-btn-logs");
@@ -71,7 +68,6 @@ window.switchPanelTab = function(targetTab) {
     }
 };
 
-// Core App Window Layout View Framework Controllers
 window.toggleControlPanel = function(show) {
     const modal = document.getElementById("control-panel-modal");
     if (show) {
@@ -91,18 +87,82 @@ window.toggleDetailsModal = function(show) {
     }
 };
 
-window.openPhotoDetails = function(imgUrl, dateString, focusY) {
-    const img = document.getElementById("details-img");
-    const caption = document.getElementById("details-date-string");
+let activeModalMemories = [];
+let activeModalIndex = 0;
+let touchStartX = 0;
+let touchEndX = 0;
+
+window.openPhotoDetails = function(photosArray, index) {
+    // Safety Guard: Ensure photosArray is valid and index is within bounds
+    if (!Array.isArray(photosArray) || photosArray.length === 0) {
+        window.writeSystemLog("Error handling alert: Attempted to open modal with invalid or empty photos array.", "error");
+        return;
+    }
     
-    img.src = imgUrl;
-    img.style.objectPosition = `center ${focusY || '50%'}`;
+    activeModalIndex = Math.max(0, Math.min(index, photosArray.length - 1));
+    activeModalMemories = photosArray;
     
-    const dateObj = new Date(dateString);
-    caption.innerText = `Captured on: ${dateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} 💜`;
-    
-    window.writeSystemLog(`Lightbox opened for memory block data string. Date target: ${dateString}`, "info");
+    updateModalContent();
     toggleDetailsModal(true);
+};
+
+function updateModalContent() {
+    try {
+        const memory = activeModalMemories[activeModalIndex];
+        
+        if (!memory) {
+            window.writeSystemLog(`Error handling alert: Memory at index ${activeModalIndex} is undefined.`, "error");
+            return;
+        }
+
+        const img = document.getElementById("details-img");
+        const caption = document.getElementById("details-date-string");
+
+        if (img) {
+            img.classList.add("img-fade-out"); 
+            setTimeout(() => {
+                try {
+                    img.src = memory.imageUrl || "https://images.unsplash.com/photo-1518199266791-5375a83190b7?q=80&w=600&auto=format&fit=crop";
+                    img.style.objectPosition = `center ${memory.focusY || '50%'}`;
+                    img.classList.remove("img-fade-out");
+                } catch (imgErr) {
+                    window.writeSystemLog("Error rendering details image: " + imgErr.message, "error");
+                }
+            }, 150);
+        }
+
+        if (caption) {
+            const rawDate = memory.takenDate || memory.createdAt;
+            const dateObj = rawDate ? new Date(rawDate) : new Date();
+            
+            if (!isNaN(dateObj.getTime())) {
+                caption.innerText = `Captured on: ${dateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} 💜`;
+            } else {
+                caption.innerText = `A Beautiful Moment 💜`; 
+            }
+        }
+        
+        const prevBtn = document.getElementById("modal-prev-btn");
+        const nextBtn = document.getElementById("modal-next-btn");
+        
+        if (prevBtn) prevBtn.style.display = activeModalIndex === 0 ? "none" : "flex";
+        if (nextBtn) nextBtn.style.display = activeModalIndex === activeModalMemories.length - 1 ? "none" : "flex";
+
+    } catch (globalModalError) {
+        window.writeSystemLog(`Critical failure caught inside updateModalContent: ${globalModalError.message}`, "error");
+    }
+}
+
+window.navigateModal = function(direction) {
+    try {
+        const newIndex = activeModalIndex + direction;
+        if (newIndex >= 0 && newIndex < activeModalMemories.length) {
+            activeModalIndex = newIndex;
+            updateModalContent();
+        }
+    } catch (navError) {
+        window.writeSystemLog(`Navigation swipe error handled: ${navError.message}`, "error");
+    }
 };
 
 // File stream parsing logic
@@ -210,7 +270,6 @@ window.removePreview = function() {
     window.writeSystemLog("Cleared temporary media upload asset cache data constraints.", "info");
 };
 
-// Optimised read operations fetching all memories sequentially
 async function loadLiveMemories() {
     const timelineContainer = document.getElementById("dynamic-timeline");
     if (!timelineContainer) return;
@@ -243,6 +302,18 @@ async function loadLiveMemories() {
         console.error("Database read failure: ", error);
         window.writeSystemLog(`CRITICAL PIPELINE ERROR: ${error.message}`, "error");
         window.updateDatabaseBadgeStatus("ERROR", "badge-offline");
+        
+        // 🛡️ NEW ERROR HANDLING: Show a friendly message to the user if the cloud fails
+        if (timelineContainer) {
+            timelineContainer.innerHTML = `
+                <div style="text-align: center; color: #ff7675; padding: 40px 20px; animation: popIn 0.5s ease forwards;">
+                    <h3 style="font-family: 'Dancing Script', cursive; font-size: 2.5rem; color: #6c5ce7;">Oops! Connection Lost 🌧️</h3>
+                    <p style="font-weight: 600;">We couldn't reach the cloud to load your memories.</p>
+                    <p style="font-size: 0.9rem;">Please check your internet connection and refresh the page.</p>
+                    <p style="font-size: 0.75rem; color: #888; margin-top: 15px; font-family: monospace;">Error details: ${error.message}</p>
+                </div>
+            `;
+        }
     }
 }
 
@@ -310,13 +381,19 @@ function renderTimelineGrid() {
             }
 
             const img = document.createElement("img");
+            
+            img.setAttribute("loading", "lazy");
+            img.decoding = "async"; 
+
             img.onload = () => { 
                 img.classList.add("loaded"); 
                 photoDiv.classList.add("popped"); 
             };
             img.onerror = () => {
-                window.writeSystemLog(`Render warning: Asset index [${index}] failed to decode or string is corrupt.`, "error");
+                window.writeSystemLog(`Render warning: Asset index [${index}] failed to decode. Hiding from grid to protect layout.`, "error");
+                photoDiv.style.display = "none"; 
             };
+            
             img.src = memory.imageUrl;
             
             if (img.complete) {
@@ -329,7 +406,7 @@ function renderTimelineGrid() {
             
             img.onclick = (e) => {
                 e.stopPropagation(); 
-                openPhotoDetails(memory.imageUrl, memory.takenDate || memory.createdAt, memory.focusY);
+                openPhotoDetails(photosArray, index);
             };
             photoDiv.appendChild(img);
 
@@ -488,13 +565,20 @@ if (passwordInput) {
 
 function processAndUploadSingleFile(file, chosenDateStr) {
     return new Promise((resolve, reject) => {
+        // 🛡️ NEW ERROR HANDLING: Strictly verify it is actually an image file first
+        if (!file.type.startsWith('image/')) {
+            return reject(new Error(`Invalid format: "${file.name}" is not a recognized image file.`));
+        }
+
         const reader = new FileReader();
+        reader.onerror = () => reject(new Error(`Failed to read local data stream for: ${file.name}`));
         reader.readAsDataURL(file);
-        reader.onerror = () => reject(new Error(`Failed to read data stream for: ${file.name}`));
+        
         reader.onload = (event) => {
             const img = new Image();
+            img.onerror = () => reject(new Error(`Failed to decode image data for: ${file.name}. File might be corrupted.`));
             img.src = event.target.result;
-            img.onerror = () => reject(new Error(`Failed to map image element source for: ${file.name}`));
+            
             img.onload = async () => {
                 try {
                     const canvas = document.createElement("canvas");
@@ -514,12 +598,22 @@ function processAndUploadSingleFile(file, chosenDateStr) {
                         }
                     }
 
-                    canvas.width = width;
-                    canvas.height = height;
+                    // 🛡️ NEW ERROR HANDLING: Prevent fractional pixels which can crash some mobile browsers
+                    canvas.width = Math.floor(width);
+                    canvas.height = Math.floor(height);
+                    
                     const ctx = canvas.getContext("2d");
-                    ctx.drawImage(img, 0, 0, width, height);
+                    if (!ctx) {
+                        throw new Error("Your browser failed to initialize the Canvas 2D engine required for compression.");
+                    }
+
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
                     const optimizedBase64String = canvas.toDataURL("image/jpeg", 0.80);
+                    
+                    if (!optimizedBase64String || optimizedBase64String === "data:,") {
+                        throw new Error("Image compression failed. The canvas output yielded empty data.");
+                    }
                     
                     await addDoc(collection(db, "memories"), {
                         imageUrl: optimizedBase64String,
@@ -612,7 +706,7 @@ if (submitBtn) {
 }
 
 function updateTimer() {
-    const startDate = new Date("November 27, 2024 00:00:00").getTime();
+    const startDate = new Date("February 8, 2024 00:00:00").getTime();
     const now = new Date().getTime();
     const diff = now - startDate;
 
@@ -621,7 +715,6 @@ function updateTimer() {
     const mEl = document.getElementById("minutes");
     const sEl = document.getElementById("seconds");
 
-    // Helper function to update the text and trigger the CSS "tick" animation
     function updateTimeEl(el, value) {
         if (el && el.innerText != value) {
             el.innerText = value;
@@ -636,6 +729,51 @@ function updateTimer() {
     updateTimeEl(sEl, Math.floor((diff % (1000 * 60)) / 1000));
 }
 
+document.addEventListener("DOMContentLoaded", () => {
+    const prevBtn = document.getElementById("modal-prev-btn");
+    const nextBtn = document.getElementById("modal-next-btn");
+    const detailsCard = document.getElementById("details-card-container");
+    
+    if(prevBtn) prevBtn.addEventListener("click", (e) => { e.stopPropagation(); navigateModal(-1); });
+    if(nextBtn) nextBtn.addEventListener("click", (e) => { e.stopPropagation(); navigateModal(1); });
+
+    document.addEventListener("keydown", (e) => {
+        const modalOverlay = document.getElementById("details-modal");
+        if (modalOverlay && modalOverlay.classList.contains("visible")) {
+            if (e.key === "ArrowLeft") navigateModal(-1);
+            if (e.key === "ArrowRight") navigateModal(1);
+            if (e.key === "Escape") toggleDetailsModal(false);
+        }
+    });
+
+    function handleSwipe() {
+        try {
+            if (!activeModalMemories || activeModalMemories.length === 0) return;
+            
+            const SWIPE_THRESHOLD = 50; 
+            if (touchEndX < touchStartX - SWIPE_THRESHOLD) navigateModal(1);  
+            if (touchEndX > touchStartX + SWIPE_THRESHOLD) navigateModal(-1);
+        } catch (swipeErr) {
+            console.warn("Swipe gesture computation intercepted smoothly: ", swipeErr);
+        }
+    }
+
+    if(detailsCard) {
+        detailsCard.addEventListener("touchstart", (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+        }, {passive: true});
+
+        detailsCard.addEventListener("touchend", (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        }, {passive: true});
+        
+        // 4. Mouse Dragging (Alternative for PCs)
+        detailsCard.addEventListener("mousedown", (e) => { touchStartX = e.screenX; });
+        detailsCard.addEventListener("mouseup", (e) => { touchEndX = e.screenX; handleSwipe(); });
+    }
+});
+
 window.addEventListener('online', () => {
     window.writeSystemLog("Network framework environment report: Browser is ONLINE.", "success");
     window.updateDatabaseBadgeStatus("ONLINE", "badge-online");
@@ -645,7 +783,6 @@ window.addEventListener('offline', () => {
     window.updateDatabaseBadgeStatus("OFFLINE", "badge-offline");
 });
 
-// Structural initialization fix that resolves the DOMContentLoaded timing bug
 function startSystemEngine() {
     if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
     window.writeSystemLog("System Core Engine workspace boot cycle started. Connecting configuration properties to global web interface...", "sys");

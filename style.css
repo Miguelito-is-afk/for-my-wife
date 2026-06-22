@@ -937,6 +937,50 @@ input[type="file"] { display: none; }
     font-weight: bold;
 }
 
+/* --- Modal Navigation & Swipe Styles --- */
+.nav-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.85);
+    color: var(--dark-purple);
+    border: none;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    font-size: 1.5rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-md);
+    z-index: 10;
+    transition: all 0.2s ease;
+}
+
+.nav-btn:hover {
+    background: var(--dark-purple);
+    color: white;
+    transform: translateY(-50%) scale(1.1);
+}
+
+.prev-btn { left: -20px; }
+.next-btn { right: -20px; }
+
+/* Keep buttons tucked in on mobile */
+@media (max-width: 600px) {
+    .prev-btn { left: -10px; width: 35px; height: 35px; font-size: 1.2rem; }
+    .next-btn { right: -10px; width: 35px; height: 35px; font-size: 1.2rem; }
+}
+
+/* Smooth fade effect when swapping images */
+#details-img {
+    transition: opacity 0.2s ease-in-out;
+}
+.img-fade-out {
+    opacity: 0;
+}
+
 /* --- Footer Area --- */
 footer {
     padding: 80px 20px;
