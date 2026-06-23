@@ -390,6 +390,8 @@ function renderTimelineGrid() {
 
     let sectionIndex = 0;
 
+    const timelineFragment = document.createDocumentFragment();
+
     for (const [monthYearName, photosArray] of Object.entries(groupedMap)) {
         const section = document.createElement("section");
         section.className = "month-section month-collapsed"; 
@@ -542,8 +544,10 @@ function renderTimelineGrid() {
 
         contentWrapper.appendChild(contentInner);
         section.appendChild(contentWrapper);
-        timelineContainer.appendChild(section);
+        timelineFragment.appendChild(section);
     }
+
+    timelineContainer.appendChild(timelineFragment);
 }
 
 window.downloadPhoto = function(base64Data, filename) {
@@ -752,15 +756,15 @@ if (submitBtn) {
     });
 }
 
+const dEl = document.getElementById("days");
+const hEl = document.getElementById("hours");
+const mEl = document.getElementById("minutes");
+const sEl = document.getElementById("seconds");
+
 function updateTimer() {
     const startDate = new Date("February 8, 2024 00:00:00").getTime();
     const now = new Date().getTime();
     const diff = now - startDate;
-
-    const dEl = document.getElementById("days");
-    const hEl = document.getElementById("hours");
-    const mEl = document.getElementById("minutes");
-    const sEl = document.getElementById("seconds");
 
     function updateTimeEl(el, value) {
         if (el && el.innerText != value) {
